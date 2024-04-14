@@ -67,13 +67,12 @@ async fn main() -> Result<()> {
         Ok(addr) => addr,
         Err(_) => {
             let domain_port = args.socks_address.to_string();
-            let mut addrs = tokio::net::lookup_host(domain_port).await;
-            match addrs {
+            match tokio::net::lookup_host(domain_port).await {
                 Ok(mut addrs) => match addrs.next() {
-                    Some(Ok(addr)) => addr,
-                    _ => SocketAddr::from(([127, 0, 0, 1], args.port)),
+                    Some(addr) => addr,
+                    None => SocketAddr::from(([127, 0, 0, 1], args.socks_address.port())),
                 },
-                Err(_) => SocketAddr::from(([127, 0, 0, 1], args.port)),
+                Err(_) => SocketAddr::from(([127, 0, 0, 1], args.socks_address.port())),
             }
         }
     };
