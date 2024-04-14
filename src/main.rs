@@ -63,7 +63,20 @@ async fn main() -> Result<()> {
 
     let args = Cli::parse();
 
-    let socks_addr = args.socks_address;
+    let socks_addr = match args.socks_address.to_string().parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(_) => {
+            let domain_port = args.socks_address.to_string();
+            let mut addrs = tokio::net::lookup_host(domain_port).await;
+            match addrs {
+                Ok(mut addrs) => match addrs.next() {
+                    Some(Ok(addr)) => addr,
+                    _ => SocketAddr::from(([127, 0, 0, 1], args.port)),
+                },
+                Err(_) => SocketAddr::from(([127, 0, 0, 1], args.port)),
+            }
+        }
+    };
     let port = args.port;
     let auth = args
         .auth
